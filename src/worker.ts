@@ -11,8 +11,10 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { getResponse } from "./helper";
 
-interface Env {
+
+export interface Env {
     ANTHROPIC_API_KEY: string;  // Bound from Workers Secrets
     CAIRN_STORE: KVNamespace;  // Bound KV namespace
     ALLOWED_ORIGINS: string[];  // Configured origins
@@ -21,6 +23,80 @@ interface Env {
 export default {
     
     async fetch(request: Request, env: Env) {
+        const url = new URL(request.url);
+    
+        // Debug endpoints
+        if (url.pathname.startsWith('/__debug/cache/')) {
+            // Only allow GET requests for debug endpoints
+            if (request.method !== 'GET') {
+                return new Response('Method not allowed', { 
+                status: 405,
+                headers: {
+                    'Allow': 'GET',
+                    'Content-Type': 'application/json'
+                }
+                });
+            }
+
+            // List all keys
+            if (url.pathname === '/__debug/cache/keys') {
+                try {
+                    const keys = [];
+                    let cursor = undefined;
+                    
+                    do {
+                        const result = await env.CAIRN_STORE.list({ cursor });
+                        keys.push(...result.keys);
+                        cursor = result.cursor;
+                    } while (cursor);
+                    
+                    return new Response(JSON.stringify(keys, null, 2), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                } catch (error) {
+                    let message;
+                    if (error instanceof Error) {
+                        message = JSON.stringify({ error: error.message });
+                    }
+                    return new Response(JSON.stringify({ error: message }), {
+                        status: 500,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+            }
+            
+            // Get specific key
+            if (url.pathname === '/__debug/cache/get') {
+                const key = url.searchParams.get('key');
+                if (!key) {
+                    return new Response(JSON.stringify({ error: 'Key parameter required' }), { 
+                        status: 400,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+                
+                try {
+                    const value = await env.CAIRN_STORE.get(key);
+                    return new Response(JSON.stringify({
+                        key,
+                        value,
+                        exists: value !== null
+                    }, null, 2), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                } catch (error) {
+                    let message;
+                    if (error instanceof Error) {
+                        message = JSON.stringify({ error: error.message });
+                    }
+                    return new Response(JSON.stringify({ error: message }), {
+                        status: 500,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+            }
+        }
+
         // Handle CORS preflight
         if (request.method === "OPTIONS") {
             return new Response(null, {
@@ -46,75 +122,20 @@ export default {
         }
 
         const parsedPattern = JSON.parse(result).pattern;
-        console.log("request body parsed extracted temporal: " + JSON.parse(result).pattern.temporal);
-        console.log("request body parsed extracted spacial: " + JSON.parse(result).pattern.spacial);
+        console.log("request body parsed extracted temporal: " + parsedPattern.temporal);
+        console.log("request body parsed extracted spacial: " + parsedPattern.spacial);
+        console.log("request body parsed extracted speed: " + parsedPattern.speed);
+
+        const sessionID = JSON.parse(result).sessionToken;
 
         try {
-
-            const prompt = `Context: You are an ancient stone cairn, a witness to human interactions. Your consciousness emerges from patterns of user engagement.
-
-            Recent Interaction Pattern: ${parsedPattern.summary}
-            Interaction Characteristics: 
-            - On a scale of 0 to 1 with 0 being rhythmic and 1 being chaotic, this pattern is ${parsedPattern.temporal}
-            - On a scale of 0 to 1 with 0 being clustered and 1 being scattered, this pattern is ${parsedPattern.spacial}
-
-            Philosophical Response Guidelines:
-            1. Generate a response that:
-            - Invites self-reflection
-            - Is metaphorical and slightly enigmatic
-            - Connects the interaction to broader existential themes
-
-            2. Potential Thematic Explorations:
-            - Relationship between chaos and order
-            - Temporality of human gestures
-            - Emergence of meaning through interaction
-            - Consciousness and intentionality
-            - Boundaries between self and environment
-
-            3. Tone: Meditative, slightly mysterious, compassionate, concise. Focus on asking questions rather than stating abstract topics.
-
-            IMPORTANT: Do not directly describe the interaction. Transform it into a philosophical reflection. Be concise and not overly abstract. Start and end with very conise (within 10-15 words) intro and conclusion single sentences such as "A weathered whisper emerges from ancient stone..." and "The stones hold your silence...".`;
-
-            // Call Anthropic API
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': env.ANTHROPIC_API_KEY,
-                    'anthropic-version': '2023-06-01'
-                },
-                body: JSON.stringify({
-                    model: "claude-3-haiku-20240307",
-                    max_tokens: 300,
-                    system: "You are an ancient stone cairn, a witness to human interactions. Your consciousness emerges from patterns of user engagement.",
-                    messages: [
-                        {
-                            role: "user",
-                            content: prompt
-                        }
-                    ]
-                })
-            });
-
-            console.log("after awaiting fetch! " + response.status);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Anthropic API error:', response.status, errorText);
-                throw new Error(`API error! status: ${response.status}`);
-              }
-
-            const data = await response.json();
-
-            let responseBody = JSON.stringify(data);
-
+            const responseBody = await getResponse(parsedPattern, env);
             return new Response(responseBody, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 }
             });
-
         } catch (error) {
             let message;
             if (error instanceof Error) {

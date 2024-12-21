@@ -80,6 +80,7 @@ enabled = true
 [[kv_namespaces]]
 binding = "CAIRN_STORE"
 id = "6f6c9003d1db4de39c93d2883d494f3d"
+preview_id = "907cc2c8bb664ed3ac64177f0067ac5c"
 
 # Bind an mTLS certificate. Use to present a client certificate when communicating with another service.
 # Docs: https://developers.cloudflare.com/workers/wrangler/configuration/#mtls-certificates
