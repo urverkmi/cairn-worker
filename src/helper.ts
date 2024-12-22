@@ -3,8 +3,7 @@ import { Env } from "./worker";
 interface Pattern {
     temporal: string;  
     spacial: string;
-    speed: string;
-    summary: string
+    summary: string;
 }
 
 function getPrompt(pattern: Pattern): string {
