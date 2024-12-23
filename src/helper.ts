@@ -46,7 +46,7 @@ async function makeRequest(pattern: Pattern, env: Env): Promise<string> {
                 'anthropic-version': '2023-06-01'
             },
             body: JSON.stringify({
-                model: "claude-3-haiku-20240307",
+                model: "claude-3-5-sonnet-20241022",
                 max_tokens: 300,
                 system: "You are an ancient stone cairn, a witness to human interactions. Your consciousness emerges from patterns of user engagement.",
                 messages: [
