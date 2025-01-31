@@ -11,7 +11,8 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
-import { getResponse } from "./helper";
+import { getCairnResponse } from "./cairn-helper";
+import { getPromenadeResponse } from "./promenade-helper";
 
 
 export interface Env {
@@ -129,7 +130,15 @@ export default {
         const sessionID = JSON.parse(result).sessionToken;
 
         try {
-            const responseBody = await getResponse(parsedPattern, env);
+            let responseBody;
+            switch (parsedPattern.type) {
+                case 'promenade':
+                    responseBody = await getPromenadeResponse(parsedPattern, env);
+                    break;
+                case 'cairn':
+                    responseBody = await getCairnResponse(parsedPattern, env);
+                    break;
+            }
             return new Response(responseBody, {
                 headers: {
                     'Content-Type': 'application/json',

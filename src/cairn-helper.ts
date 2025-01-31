@@ -83,7 +83,7 @@ async function createCacheKey(pattern: Pattern) {
     return round(parseFloat(pattern.temporal)) + "::" + round(parseFloat(pattern.spacial));
 }
   
-export async function getResponse(pattern: Pattern, env: Env): Promise<string> {
+export async function getCairnResponse(pattern: Pattern, env: Env): Promise<string> {
     try {
         const cacheKey = await createCacheKey(pattern);
 
