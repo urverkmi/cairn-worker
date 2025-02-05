@@ -75,12 +75,8 @@ async function makeRequest(pattern: Pattern, env: Env): Promise<string> {
     }
 }
 
-function round(num: number): number {
-    return Math.round(num * 10) / 10;
-}
-
 async function createCacheKey(pattern: Pattern) {
-    return "[cairn]" + round(parseFloat(pattern.temporal)) + "::" + round(parseFloat(pattern.spacial));
+    return "[cairn]" + (+pattern.temporal).toFixed(2) + "::" + (+pattern.spacial).toFixed(2);;
 }
   
 export async function getCairnResponse(pattern: Pattern, env: Env): Promise<string> {

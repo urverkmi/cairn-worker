@@ -64,12 +64,8 @@ async function makeRequest(pattern: Pattern, env: Env): Promise<string> {
     }
 }
 
-function round(num: number): number {
-    return Math.round(num * 10) / 10;
-}
-
 async function createCacheKey(pattern: Pattern) {
-    return "[promenade]" + round(parseFloat(pattern.temporal)) + "::" + round(parseFloat(pattern.spacial));
+    return "[promenade]" + (+pattern.temporal).toFixed(2) + "::" + (+pattern.spacial).toFixed(2);
 }
   
 export async function getPromenadeResponse(pattern: Pattern, env: Env): Promise<string> {
