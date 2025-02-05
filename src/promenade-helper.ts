@@ -16,7 +16,7 @@ function getPrompt(pattern: Pattern): string {
             - On a scale of 0 to 1 with 0 being rhythmic and 1 being chaotic, this pattern is ${pattern.temporal}
             - On a scale of 0 to 1 with 0 being clustered and 1 being scattered, this pattern is ${pattern.spacial}
 
-            How would you describe the graphic element of this gift such that a computer program can read your response for color, shape, position information and draw out an imagery? Provide the construction of this graphic in the following format, at the very end of your response: [{shape: "rectangle", color: "blue"}, {shape: "ellipse", color: "green"}, ...]
+            How would you describe the graphic element of this gift such that a computer program can read your response for color and shape information and draw out an imagery? Provide the construction of this graphic in the following format, at the very end of your response: [{shape: "rectangle", color: "blue"}, {shape: "ellipse", color: "green"}, ...]
 
             IMPORTANT: Give your responses concisely with minimal narrations.`;
 
@@ -69,7 +69,7 @@ function round(num: number): number {
 }
 
 async function createCacheKey(pattern: Pattern) {
-    return round(parseFloat(pattern.temporal)) + "::" + round(parseFloat(pattern.spacial));
+    return "[promenade]" + round(parseFloat(pattern.temporal)) + "::" + round(parseFloat(pattern.spacial));
 }
   
 export async function getPromenadeResponse(pattern: Pattern, env: Env): Promise<string> {
